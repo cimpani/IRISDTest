@@ -1,0 +1,267 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Using Casa’s Plotms &#8212; eMerlin v0.0.3 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="nav-item nav-item-0"><a href="index.html">eMerlin v0.0.3 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="using-casa-s-plotms">
+<span id="vla-using-casa-plotms"></span><h1>Using Casa’s Plotms<a class="headerlink" href="#using-casa-s-plotms" title="Permalink to this headline">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">plotms</span></code> is a GUI tool supplied with casa for plotting visibility and calibration data. The HPC services offered by, for example, the <a class="reference external" href="https://docs.hpc.cam.ac.uk/hpc/index.html">Cambridge CSD3 system</a>, are intended to be used with batch submission scripts where GUI tools cannot be used. Fortunately, <code class="docutils literal notranslate"><span class="pre">plotms</span></code> can be called from the command line and used to save plots without using the GUI functionality. This tutorial describes how to use <code class="docutils literal notranslate"><span class="pre">plotms</span></code> as part of a batch submission script without using its GUI functionality. This allows users to exploit the full functionality of <code class="docutils literal notranslate"><span class="pre">plotms</span></code>.</p>
+<div class="section" id="building-the-singularity-container">
+<span id="vla-using-casa-plotms-buiding-the-singularity-container"></span><h2>Building the Singularity Container<a class="headerlink" href="#building-the-singularity-container" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">The basic casa singularity described in <a class="reference internal" href="singularity.html#use-of-singularity"><span class="std std-ref">Use of Singularity</span></a> must be modified in order to allow access to <code class="docutils literal notranslate"><span class="pre">plotms</span></code> from within a submission script. The following script, named <a class="reference download internal" download="" href="_downloads/3140c4cb00270ae0f4d16b50d968d328/casa_plotms.def"><code class="xref download docutils literal notranslate"><span class="pre">casa_plotms.def</span></code></a>, can be used to create a singularity container capable of running <code class="docutils literal notranslate"><span class="pre">plotms</span></code> as part of a batch submission script:</p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Bootstrap: docker
+From: scientificlinux/sl
+
+%post
+yum -y update
+yum -y upgrade
+yum -y install xorg-x11-server-Xvfb
+yum -y install wget perl less
+
+<span class="c1">#Install casa dependencies</span>
+yum -y install fontconfig freetype freetype-devel fontconfig-devel libstdc++
+
+<span class="c1">#Install casa</span>
+<span class="nb">cd</span> /usr/local
+wget https://casa.nrao.edu/download/distro/casa/release/rhel/casa-6.4.3-27-py3.8.tar.xz
+tar xf casa-6.4.3-27-py3.8.tar.xz
+rm casa-6.4.3-27-py3.8.tar.xz
+
+<span class="c1">#The above casa installation contains three AppImage files</span>
+<span class="c1">#AppImages only work within singularity containers if they are unpacked</span>
+<span class="c1">#The following replaces the three packed AppImages with unpacked versions</span>
+<span class="nb">cd</span> /usr/local/casa-6.4.3-27/lib/py/lib/python3.8/site-packages/casaplotms/__bin__/
+./casaplotms-x86_64.AppImage --appimage-extract
+chmod -R <span class="m">755</span> /usr/local/casa-6.4.3-27/lib/py/lib/python3.8/site-packages/casaplotms/__bin__/squashfs-root/
+rm ./casaplotms-x86_64.AppImage
+ln -s ./squashfs-root/AppRun ./casaplotms-x86_64.AppImage
+
+<span class="nb">cd</span> /usr/local/casa-6.4.3-27/lib/py/lib/python3.8/site-packages/casaplotserver/__bin__/
+./casaplotserver-x86_64.AppImage --appimage-extract
+chmod -R <span class="m">755</span> /usr/local/casa-6.4.3-27/lib/py/lib/python3.8/site-packages/casaplotserver/__bin__/squashfs-root/
+rm ./casaplotserver-x86_64.AppImage
+ln -s ./squashfs-root/AppRun ./casaplotserver-x86_64.AppImage
+
+<span class="nb">cd</span> /usr/local/casa-6.4.3-27/lib/py/lib/python3.8/site-packages/casaviewer/__bin__/
+./casaviewer-x86_64.AppImage --appimage-extract
+chmod -R <span class="m">755</span> /usr/local/casa-6.4.3-27/lib/py/lib/python3.8/site-packages/casaviewer/__bin__/squashfs-root
+rm ./casaviewer-x86_64.AppImage
+ln -s ./squashfs-root/AppRun ./casaviewer-x86_64.AppImage
+
+%environment
+<span class="nb">export</span> <span class="nv">LC_ALL</span><span class="o">=</span>C
+<span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span>/usr/local/casa-6.4.3-27/bin:<span class="nv">$PATH</span>
+
+%runscript
+xvfb-run casa --nologger --log2term --nogui
+
+%labels
+Author IRIS-Radioastronomy
+</pre></div>
+</div>
+<p>Note the following points about the definition script:</p>
+<blockquote>
+<div><ul class="simple">
+<li>The <code class="docutils literal notranslate"><span class="pre">xorg-x11-server-Xvfb</span></code> (X Virtual Frame Buffer) is an X server package that allows software that would normally require an X display to be run on machines with no display hardware. Rather than interacting with a monitor <code class="docutils literal notranslate"><span class="pre">plotms</span></code> interacts with this package.</li>
+<li>When casa is installed, it also installs three AppImage files one of which, <code class="docutils literal notranslate"><span class="pre">casaplotms-x86_64.AppImage</span></code>, is used to run <code class="docutils literal notranslate"><span class="pre">plotms</span></code>. AppImage’s require access to FUSE in order to run. However, using FUSE to mount a filesystem inside a container may undermine the security features offered by singularity. This script therefore adopts an alternative, safer, solution and unpacks/extracts the AppImage before redirecting any calls to the original AppImage to the unpacked version. Whilst strictly only the <code class="docutils literal notranslate"><span class="pre">casaplotms</span></code> AppImage is needed to run <code class="docutils literal notranslate"><span class="pre">plotms</span></code> this script unpacks all three AppImages for completeness.</li>
+<li>The runscript command <code class="docutils literal notranslate"><span class="pre">xvfb-run</span> <span class="pre">casa</span> <span class="pre">...</span></code> uses Xvfb to launch casa so that all calls to the display are redirected to Xvfb.</li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+</li>
+<li><p class="first">Using this script a singularity container, in this case named <code class="docutils literal notranslate"><span class="pre">casa_plotms.sif</span></code>, can be built by entering the following command:</p>
+</li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">(host) $</span> singularity build --fakeroot casa_plotms.sif casa_plotms.def
+</pre></div>
+</div>
+</div>
+<div class="section" id="create-the-slurm-script">
+<span id="vla-using-casa-plotms-create-the-slurm-script"></span><h2>Create the slurm script<a class="headerlink" href="#create-the-slurm-script" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">The slurm script used in this tutorial is called <a class="reference download internal" download="" href="_downloads/7518557bdbf3fd5dbf9cd5d082550927/casa_plotms.slurm"><code class="xref download docutils literal notranslate"><span class="pre">casa_plotms.slurm</span></code></a> and contains the following lines of code:</p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
+<span class="c1">#SBATCH -J Casa-Plotms</span>
+<span class="c1">#SBATCH -A DIRAC-TP001-CPU</span>
+<span class="c1">#SBATCH -p icelake</span>
+<span class="c1">#SBATCH --nodes=1</span>
+<span class="c1">#SBATCH --ntasks=1</span>
+<span class="c1">#SBATCH --time=00:45:00</span>
+<span class="c1">#SBATCH --mail-type=ALL</span>
+<span class="c1">#SBATCH --no-requeue</span>
+
+<span class="c1">#! Enter the script to run here</span>
+. /etc/profile.d/modules.sh
+module load rhel8/default-icl
+module load singularity
+singularity <span class="nb">exec</span> casa_plotms.sif xvfb-run casa -c 3C391_script.py
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ol>
+<p>This script is nearly identical to the one described in <a class="reference internal" href="cambridgehpc.html#vla-basic-imaging"><span class="std std-ref">VLA Basic Imaging</span></a>. The important difference is in the last line which executes a command within the singularity container <code class="docutils literal notranslate"><span class="pre">casa_plotms.sif</span></code>. The execute command does not trigger the run script within the singularity and so the command <code class="docutils literal notranslate"><span class="pre">xvfb-run</span> <span class="pre">casa</span> <span class="pre">...</span></code> is needed to use Xvfb to launch casa which in turn calls the casa script named 3C391_script.py.</p>
+</div>
+<div class="section" id="create-the-casa-script">
+<span id="vla-using-casa-plotms-create-the-casa-script"></span><h2>Create the CASA script<a class="headerlink" href="#create-the-casa-script" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">The casa script used in this tutorial is named <a class="reference download internal" download="" href="_downloads/648cb61341d3b1c8561142ce6b24bc0f/3C391_script.py"><code class="xref download docutils literal notranslate"><span class="pre">3C391_script.py</span></code></a>. This script follows the <a class="reference external" href="https://casaguides.nrao.edu/index.php?title=VLA_Continuum_Tutorial_3C391-CASA6.2.0">VLA Continuum Tutorial 3C 391</a> to generate an image of the supernova remnant 3C 391. The measurement set used in this tutorial can be downloaded from the VLA tutorial website. Shown below are two of the calls made to <code class="docutils literal notranslate"><span class="pre">plotms</span></code> within the script:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">...</span>
+
+<span class="n">plotms</span><span class="p">(</span><span class="n">vis</span><span class="o">=</span><span class="n">vis</span><span class="p">,</span><span class="n">selectdata</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">correlation</span><span class="o">=</span><span class="s1">&#39;RR,LL&#39;</span><span class="p">,</span><span class="n">averagedata</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">avgchannel</span><span class="o">=</span><span class="s1">&#39;64&#39;</span><span class="p">,</span><span class="n">coloraxis</span><span class="o">=</span><span class="s1">&#39;field&#39;</span><span class="p">,</span><span class="n">showgui</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">plotfile</span><span class="o">=</span><span class="s1">&#39;plotms_3c391-Time.png&#39;</span><span class="p">,</span><span class="n">highres</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="o">...</span>
+
+<span class="n">plotms</span><span class="p">(</span><span class="n">vis</span><span class="o">=</span><span class="s1">&#39;3c391_ctm_mosaic_10s_spw0.G0all&#39;</span><span class="p">,</span><span class="n">xaxis</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">,</span><span class="n">yaxis</span><span class="o">=</span><span class="s1">&#39;phase&#39;</span><span class="p">,</span><span class="n">coloraxis</span><span class="o">=</span><span class="s1">&#39;corr&#39;</span><span class="p">,</span><span class="n">iteraxis</span><span class="o">=</span><span class="s1">&#39;antenna&#39;</span><span class="p">,</span><span class="n">exprange</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span><span class="n">plotrange</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">180</span><span class="p">,</span><span class="mi">180</span><span class="p">],</span><span class="n">showgui</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">plotfile</span><span class="o">=</span><span class="s1">&#39;plotms_3c391-G0all-phase.png&#39;</span><span class="p">,</span><span class="n">highres</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="o">...</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Note the following points about the casa script</dt>
+<dd><ul class="first last simple">
+<li>Every call to <code class="docutils literal notranslate"><span class="pre">plotms</span></code> sets the argument <code class="docutils literal notranslate"><span class="pre">showgui=False</span></code>. This is necessary in order for the script to work.</li>
+<li>Every call to <code class="docutils literal notranslate"><span class="pre">plotms</span></code> sets the argument <code class="docutils literal notranslate"><span class="pre">highres=True</span></code>. Setting this variable to False causes it to save the images using the screen resolution which fails causing it to revert to saving in high resolution. Setting the <code class="docutils literal notranslate"><span class="pre">highres</span></code> argument to True causes it to go straight to saving in high resolution saving time</li>
+<li>If using the <code class="docutils literal notranslate"><span class="pre">iteraxis</span></code> variable, <code class="docutils literal notranslate"><span class="pre">exprange</span></code> must not be null. In the above example we have set <code class="docutils literal notranslate"><span class="pre">exprange='all'</span></code> which causes <code class="docutils literal notranslate"><span class="pre">plotms</span></code> to save one image for every <code class="docutils literal notranslate"><span class="pre">iteraxis</span></code> page.</li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</div>
+<div class="section" id="running-the-scripts">
+<span id="vla-using-casa-plotms-running-the-scripts"></span><h2>Running the scripts<a class="headerlink" href="#running-the-scripts" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">Log on to the <a class="reference external" href="https://docs.hpc.cam.ac.uk/hpc/index.html">Cambridge CSD3 system</a> as described in <a class="reference internal" href="cambridgehpc.html#cambridgehpc-login"><span class="std std-ref">Login</span></a>.</p>
+</li>
+<li><p class="first">If necessary install the plotms-enabled singularity container described in <a class="reference internal" href="#vla-using-casa-plotms-buiding-the-singularity-container"><span class="std std-ref">Building the Singularity Container</span></a></p>
+</li>
+<li><p class="first">Run the slurm script by entering</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">(host) $</span> sbatch casa_plotms.slurm
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Check the casa <cite>.log</cite> and <cite>runtask.log</cite> files for any errors. An exit value of <cite>1</cite> in the <cite>runtask.log</cite> file indicates a terminal error occurred and the process was terminated prematurely.</p>
+</li>
+</ol>
+</div>
+<div class="section" id="generating-single-plots">
+<h2>Generating Single Plots<a class="headerlink" href="#generating-single-plots" title="Permalink to this headline">¶</a></h2>
+<p>When generating a small number of images, rather than running a batch script it may be more efficient to generate images using command line prompts. To do this:</p>
+<ol class="arabic">
+<li><p class="first">Log on to the <a class="reference external" href="https://docs.hpc.cam.ac.uk/hpc/index.html">Cambridge CSD3 system</a> as described in <a class="reference internal" href="cambridgehpc.html#cambridgehpc-login"><span class="std std-ref">Login</span></a>.</p>
+</li>
+<li><p class="first">If necessary install the plotms-enabled singularity container described in <a class="reference internal" href="#vla-using-casa-plotms-buiding-the-singularity-container"><span class="std std-ref">Building the Singularity Container</span></a></p>
+</li>
+<li><p class="first">Run the plotms-enabled singularity container by entering</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">(host) $</span> run singularity casa_plotms.sif
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">This will load the singularity and start casa automatically returning the casa command prompt. In order to generate an image enter a <code class="docutils literal notranslate"><span class="pre">plotms</span></code> command making sure to set <code class="docutils literal notranslate"><span class="pre">showgui=False</span></code> and setting the argument <code class="docutils literal notranslate"><span class="pre">plotfile</span></code> to the name of the file you wish to create. If using the <code class="docutils literal notranslate"><span class="pre">iteraxis</span></code> argument it is advisable to also set the <code class="docutils literal notranslate"><span class="pre">exprange</span></code> argument to tell plotms which of the iteraxis pages you wish to be saved. For example:</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">(CASA) $</span> plotms<span class="o">(</span><span class="nv">vis</span><span class="o">=</span><span class="s1">&#39;3c391_ctm_mosaic_10s_spw0.G0&#39;</span>,xaxis<span class="o">=</span><span class="s1">&#39;time&#39;</span>,yaxis<span class="o">=</span><span class="s1">&#39;phase&#39;</span>,coloraxis<span class="o">=</span><span class="s1">&#39;corr&#39;</span>,field<span class="o">=</span><span class="s1">&#39;J1331+3030&#39;</span>,iteraxis<span class="o">=</span><span class="s1">&#39;antenna&#39;</span>,exprange<span class="o">=</span><span class="s1">&#39;all&#39;</span>,plotrange<span class="o">=[</span>-1,-1,-180,180<span class="o">]</span>,timerange<span class="o">=</span><span class="s1">&#39;08:02:00~08:17:00&#39;</span>,showgui<span class="o">=</span>False,plotfile<span class="o">=</span><span class="s1">&#39;plotms_3c391-G0-phase.png&#39;</span>,highres<span class="o">=</span>True<span class="o">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ol>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Using Casa’s Plotms</a><ul>
+<li><a class="reference internal" href="#building-the-singularity-container">Building the Singularity Container</a></li>
+<li><a class="reference internal" href="#create-the-slurm-script">Create the slurm script</a></li>
+<li><a class="reference internal" href="#create-the-casa-script">Create the CASA script</a></li>
+<li><a class="reference internal" href="#running-the-scripts">Running the scripts</a></li>
+<li><a class="reference internal" href="#generating-single-plots">Generating Single Plots</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/using_plotms.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="nav-item nav-item-0"><a href="index.html">eMerlin v0.0.3 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, eMerlin.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

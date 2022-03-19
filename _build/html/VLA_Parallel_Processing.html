@@ -1,0 +1,314 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Parallel Processing &#8212; eMerlin v0.0.3 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="nav-item nav-item-0"><a href="index.html">eMerlin v0.0.3 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="parallel-processing">
+<h1>Parallel Processing<a class="headerlink" href="#parallel-processing" title="Permalink to this headline">¶</a></h1>
+<p>This tutorial describes how to set up a slurm script to simultaneously process multiple VLA images. This tutorial processes two images taken of the wide angle tail 3C 465. One image was taken in A configuration and the other was taken in B configuration. Both images were taken in the L-band. The data used in this tutorial can be downloaded from the <a class="reference external" href="https://science.nrao.edu/facilities/vla/archive/index">VLA archive</a> by entering the project code <code class="docutils literal notranslate"><span class="pre">12A-195</span></code> and choosing the B-configuration data taken in the 28th May 2012 and the A-configuration data taken on the 31st October 2012.</p>
+<p>This script makes use of the <code class="docutils literal notranslate"><span class="pre">parallel</span></code> module to manage resources and enable parallel processing. The parallel module utilises all available processors, so that several processes can be run in parallel with each other. If there are more processes called than there are available processors, the parallel module will wait for a process to complete before starting the next process. For example, if there are three tasks (A, B and C) and only two processors parallel will initially execute tasks A and B. It will then only start running task C once either task A or B has completed.</p>
+<div class="section" id="getting-started">
+<span id="parallel-processing-getting-started"></span><h2>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">After downloading the data untar it using the command</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">(host) $</span> tar -xvf 12A-195.sb12378614.eb13812032.56231.2797265625.ms.tar
+<span class="gp">(host) $</span> tar -xvf 12A-195.sb7351094.eb10491731.56075.655723206015.ms.tar
+</pre></div>
+</div>
+</div></blockquote>
+<p>This will unpack the two measurement sets:</p>
+<blockquote>
+<div><ul class="simple">
+<li>12A-195.sb12378614.eb13812032.56231.2797265625.ms</li>
+<li>12A-195.sb7351094.eb10491731.56075.655723206015.ms</li>
+</ul>
+</div></blockquote>
+<p>Both observations contain the following fields:</p>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="9%" />
+<col width="18%" />
+<col width="74%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Field</th>
+<th class="head">Field Name</th>
+<th class="head">Comments</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>0</td>
+<td>3C48</td>
+<td>Setup scan</td>
+</tr>
+<tr class="row-odd"><td>1</td>
+<td>3C48</td>
+<td>Primary Calibrator</td>
+</tr>
+<tr class="row-even"><td>2</td>
+<td>J2340+2641</td>
+<td>Phase Calibrator</td>
+</tr>
+<tr class="row-odd"><td>3</td>
+<td>3C 465</td>
+<td>Target</td>
+</tr>
+<tr class="row-even"><td>4</td>
+<td>J0313+4120</td>
+<td>Phase Calibrator (unused in this tutorial)</td>
+</tr>
+<tr class="row-odd"><td>5</td>
+<td>3C83.1B</td>
+<td>Target (unused in this tutorial)</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</li>
+<li><p class="first">The A configuration observation was taken on the 31st October 2012 between 06:45 and 09:15. The B configuration image was taken on the 28th May 2012 between 15:44 and 18:13. The operators log for both observations can be downloaded from <a class="reference external" href="http://www.vla.nrao.edu/cgi-bin/oplogs.cgi">here</a>.</p>
+</li>
+<li><p class="first">Load the singularity module by entering:</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">(host) $</span> module load singularity
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Download the singularity image created in <a class="reference internal" href="singularity.html#use-of-singularity"><span class="std std-ref">Use of Singularity</span></a>. The following command downloads the most up to date image which is 1.3 GB and so this may take some time!</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">(host) $</span> singularity pull library://mhardcastle/default/casa
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ol>
+</div>
+<div class="section" id="create-the-slurm-script">
+<h2>Create the slurm script<a class="headerlink" href="#create-the-slurm-script" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">The slurm script used in this tutorial is called <a class="reference download internal" download="" href="_downloads/27e4bd2d188b80d01d0dec0bcdd94cad/VLA_Parallel_Processing.slurm"><code class="xref download docutils literal notranslate"><span class="pre">VLA_Parallel_Processing.slurm</span></code></a> and contains the following lines of code:</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">#</span>!/bin/bash
+<span class="gp">#</span>SBATCH -J VLA-Parallel-Processing
+<span class="gp">#</span>SBATCH -A DIRAC-TP001-CPU
+<span class="gp">#</span>SBATCH -p icelake
+<span class="gp">#</span>SBATCH --nodes<span class="o">=</span><span class="m">1</span>
+<span class="gp">#</span>SBATCH --ntasks<span class="o">=</span><span class="m">2</span>
+<span class="gp">#</span>SBATCH --time<span class="o">=</span><span class="m">03</span>:00:00
+<span class="gp">#</span>SBATCH --mail-type<span class="o">=</span>ALL
+<span class="gp">#</span>SBATCH --no-requeue
+
+<span class="gp">#</span>! Enter the script to run here
+<span class="go">. /etc/profile.d/modules.sh</span>
+<span class="go">module load rhe18/default-icl</span>
+<span class="go">module load singularity</span>
+<span class="go">module load parallel</span>
+
+<span class="gp">#</span> Describe the measurement sets to be processed
+<span class="go">INPUTS=(&quot;12A-195.sb12378614.eb13812032.56231.2797265625.ms A L&quot; &quot;12A-195.sb7351094.eb10491731.56075.655723206015.ms B L&quot;)</span>
+
+<span class="gp">#</span> Set up the srun <span class="nb">command</span>
+<span class="gp">#</span> The -N1 -n1 options allocate a single core to each task
+<span class="go">srun=&quot;srun --exclusive -N1 -n1&quot;</span>
+
+<span class="gp">#</span> Set up the parallel <span class="nb">command</span>
+<span class="gp">#</span> The delay of <span class="m">0</span>.2 prevents overloading the controlling node
+<span class="gp">#</span> -j is the number of tasks to run simultaneously
+<span class="gp">#</span> --joblog and --resume combine to create a task log that can be used to monitor progress
+<span class="go">parallel=&quot;parallel --delay 0.2 -j $SLURM_NTASKS --joblog runtask.log --resume&quot;</span>
+
+<span class="gp">#</span> Run the <span class="nb">command</span>
+<span class="gp">$</span>parallel <span class="s2">&quot;</span><span class="nv">$srun</span><span class="s2"> singularity exec casa_latest.sif casa -c VLA_Process_3C465_Images.py {1} ::: &quot;</span><span class="si">${</span><span class="nv">INPUTS</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ol>
+<p>Note the following points about the slurm script:</p>
+<blockquote>
+<div><ul class="simple">
+<li>The command <code class="docutils literal notranslate"><span class="pre">#SBATCH</span> <span class="pre">-J</span> <span class="pre">VLA-Parallel-Processing</span></code> names the job VLA-Processing-Multiple-Images</li>
+<li>The command <code class="docutils literal notranslate"><span class="pre">#SBATCH</span> <span class="pre">-A</span> <span class="pre">DIRAC-TP001-CPU</span></code> is the name of the project under which time has been allocated</li>
+<li>The command <code class="docutils literal notranslate"><span class="pre">#SBATCH</span> <span class="pre">-p</span> <span class="pre">icelake</span></code> ensures we are using the icelake cluster</li>
+<li>By default slurm allocates one cpu per task and so the commands <code class="docutils literal notranslate"><span class="pre">#SBATCH</span> <span class="pre">--nodes=1</span></code>  and <code class="docutils literal notranslate"><span class="pre">#SBATCH</span> <span class="pre">--ntasks=2</span></code> combine to ask for two CPUs on a single node. On icelake each node has 76 CPUs with all CPUs on the same node sharing memory resources. Changing the nodes variable to 2 would have the effect of asking for two CPUs on different machines. Since the CPUs would no longer be sharing memory each task will run slightly quicker however the job is likely to take longer to schedule and is an inefficient use of resources.</li>
+<li>The command <code class="docutils literal notranslate"><span class="pre">#SBATCH</span> <span class="pre">--time=03:00:00</span></code> is requesting 3 (wall-clock) hours of processing time.</li>
+<li>The command <code class="docutils literal notranslate"><span class="pre">#SBATCH</span> <span class="pre">--mail-type=ALL</span></code> means email messages will be sent at the start and end of the job or (if applicable) when an error occurs. To disable this set the option to <code class="docutils literal notranslate"><span class="pre">NONE</span></code>.</li>
+<li>The command <code class="docutils literal notranslate"><span class="pre">#SBATCH</span> <span class="pre">--no-requeue</span></code> means that if this job is interrupted by a node failure/system downtime it will <cite>not</cite> be automatically rescheduled.</li>
+<li>The command <code class="docutils literal notranslate"><span class="pre">.</span> <span class="pre">/etc/profile.d/modules.sh</span></code> enables the module command</li>
+<li>The command <code class="docutils literal notranslate"><span class="pre">module</span> <span class="pre">load</span> <span class="pre">rhe18/default-icl</span></code> loads the basic environment needed by icelake</li>
+<li>The two module load commands load the singularity and parallel modules</li>
+<li>The <cite>INPUTS</cite> command defines a list of parameters that will be passed to the casa script. In this example the list is typed directly into the script but this could be altered to read the parameters from a file.</li>
+<li>The <code class="docutils literal notranslate"><span class="pre">srun</span> <span class="pre">--exclusive</span> <span class="pre">-n1</span> <span class="pre">-N1</span></code> allocates exclusive use of a single core to each task</li>
+<li>The <code class="docutils literal notranslate"><span class="pre">parallel</span> <span class="pre">--delay</span> <span class="pre">0.2</span> <span class="pre">-f</span> <span class="pre">$SLURM_NTASKS</span></code> tells the parallel process that we are running <code class="docutils literal notranslate"><span class="pre">ntasks</span></code> parallel processes. In this case ntasks=2, so we are running two parallel processes.</li>
+<li>The <code class="docutils literal notranslate"><span class="pre">$parallel...</span></code> command iterates through the <code class="docutils literal notranslate"><span class="pre">INPUTS</span></code> list calling the <code class="docutils literal notranslate"><span class="pre">srun</span></code> command for each element in the list. For each call of <code class="docutils literal notranslate"><span class="pre">srun</span></code>, parallel replaces the placeholder <cite>{1}</cite> with the list element. The command <code class="docutils literal notranslate"><span class="pre">srun</span></code> uses the casa_latest.sif singularity to call the VLA_Process_3C465_Images.py script within casa, sending it the parameters within the <cite>{1}</cite> placeholder.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="create-the-casa-script">
+<span id="parallel-processing-create-the-casa-script"></span><h2>Create the CASA script<a class="headerlink" href="#create-the-casa-script" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">The casa script used in this tutorial is called <a class="reference download internal" download="" href="_downloads/6048e9d56c269caf70ce049d31cf9480/VLA_Process_3C465_Images.py"><code class="xref download docutils literal notranslate"><span class="pre">VLA_Process_3C465_Images.py</span></code></a> and is based on the code used in the <a class="reference internal" href="cambridgehpc.html#vla-basic-imaging-getting-started"><span class="std std-ref">Getting Started</span></a> tutorial. The download file contains the full script with a summarised version given below:</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">from sys import argv</span>
+
+<span class="go">params = argv[1].split()</span>
+<span class="go">vis = params[0]</span>
+<span class="go">config = params[1]</span>
+<span class="go">band = params[2]</span>
+
+<span class="go">smoothed_vis = vis[:-3]+&#39;-smoothed.ms&#39;</span>
+<span class="go">primary_calibrator = &#39;1&#39;</span>
+<span class="go">phase_calibrator = &#39;2&#39;</span>
+<span class="go">target_field=&#39;3&#39;</span>
+<span class="go">refant = &#39;ea21&#39;</span>
+
+<span class="go">caltable_antpos = smoothed_vis[:-3]+&quot;.antpos&quot;</span>
+
+<span class="go">listobs(vis=vis, verbose=True, listfile=vis[:-3]+&#39;.listobs&#39;)</span>
+
+<span class="gp">#</span> Standard casa data flagging and calibration commands go here
+
+<span class="gp">#</span> Set up the variables used in imaging. The values depend upon the configuration
+<span class="go">if config==&#39;A&#39;:</span>
+<span class="go">        cell=[&#39;0.25arcsec&#39;,&#39;0.25arcsec&#39;]</span>
+<span class="go">        imsize=[11250,11250]</span>
+<span class="go">        scales=[0,10,26]</span>
+<span class="go">elif config==&#39;B&#39;:</span>
+<span class="go">        cell=[&#39;1arcsec&#39;,&#39;1arcsec&#39;]</span>
+<span class="go">        imsize=[3072,3072]</span>
+<span class="go">        scales=[0,9,22]</span>
+<span class="go">elif config==&#39;C&#39;:</span>
+<span class="go">        cell=[&#39;3arcsec&#39;,&#39;3arcsec&#39;]</span>
+<span class="go">        imsize=[1024,1024]</span>
+<span class="go">        scales=[0,9,23]</span>
+<span class="go">elif config==&#39;D&#39;:</span>
+<span class="go">        cell=[&#39;10arcsec&#39;,&#39;10arcsec&#39;]</span>
+<span class="go">        imsize=[320,320]</span>
+<span class="go">        scales=[0,9,23]</span>
+
+<span class="gp">#</span> Extract data used <span class="k">for</span> imaging from the measurement <span class="nb">set</span>
+<span class="go">rms = stats[&#39;rms&#39;][0]</span>
+
+<span class="go">tclean(vis=smoothed_vis, field=target_field, imagename=smoothed_vis[:-3]+&#39;-Clean&#39;, cell=cell, imsize=imsize, niter=20000, threshold=str(rms*5)+&#39;Jy&#39;, stokes=&#39;I&#39;, deconvolver=&#39;multiscale&#39;, scales=scales, smallscalebias=0.9, weighting=&#39;briggs&#39;, robust=0.5, pbcor=True)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ol>
+<p>Note the following points about the casa script:</p>
+<blockquote>
+<div><ul class="simple">
+<li>The <code class="docutils literal notranslate"><span class="pre">params</span> <span class="pre">=</span> <span class="pre">argv[1].split()</span></code> command imports the parameter string that was supplied by the call to parallel in the slurm script and splits it into its components. The next few lines populate the variables used throughout the script. In this example the name of the measurement set as well as the VLA configuration and band of the measurement set are all supplied. This could be expanded to include any additional information desired.</li>
+<li>The <code class="docutils literal notranslate"><span class="pre">listobs</span></code> and <code class="docutils literal notranslate"><span class="pre">tclean</span></code> commands give a simple example of how the variables can be used within the script</li>
+<li>The nested <code class="docutils literal notranslate"><span class="pre">if</span></code> block is an example of how to use the data to set up the variables used during imaging. This script only uses the <code class="docutils literal notranslate"><span class="pre">config</span></code> variable but this could easily be expanded to include additional variables such as <code class="docutils literal notranslate"><span class="pre">band</span></code>.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="running-the-scripts">
+<h2>Running the scripts<a class="headerlink" href="#running-the-scripts" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">Log on to the <a class="reference external" href="https://docs.hpc.cam.ac.uk/hpc/index.html">Cambridge CSD3 system</a> as described in <a class="reference internal" href="cambridgehpc.html#cambridgehpc-login"><span class="std std-ref">Login</span></a>.</p>
+</li>
+<li><p class="first">If necessary download the casa singularity as described in <a class="reference internal" href="cambridgehpc.html#vla-basic-imaging-getting-started"><span class="std std-ref">Getting Started</span></a>.</p>
+</li>
+<li><p class="first">Run the slurm script by entering</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">(host) $</span> sbatch VLA_Parallel_Processing.slurm
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Check the casa <cite>.log</cite> and <cite>runtask.log</cite> files for any errors. An exit value of <cite>1</cite> in the <cite>runtask.log</cite> file indicates a terminal error occurred and the process was terminated prematurely.</p>
+</li>
+</ol>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Parallel Processing</a><ul>
+<li><a class="reference internal" href="#getting-started">Getting Started</a></li>
+<li><a class="reference internal" href="#create-the-slurm-script">Create the slurm script</a></li>
+<li><a class="reference internal" href="#create-the-casa-script">Create the CASA script</a></li>
+<li><a class="reference internal" href="#running-the-scripts">Running the scripts</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/VLA_Parallel_Processing.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="nav-item nav-item-0"><a href="index.html">eMerlin v0.0.3 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, eMerlin.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

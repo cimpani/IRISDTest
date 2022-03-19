@@ -1,0 +1,297 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Singularity: basic usage and containers &#8212; eMerlin v0.0.3 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Use-case workflows (RASCIL)" href="rascilUC.html" />
+    <link rel="prev" title="Benchmarking processing performance and Parameterized jobs IRIS(cert)" href="BENCHM.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="rascilUC.html" title="Use-case workflows (RASCIL)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="BENCHM.html" title="Benchmarking processing performance and Parameterized jobs IRIS(cert)"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">eMerlin v0.0.3 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="singularity-basic-usage-and-containers">
+<h1>Singularity: basic usage and containers<a class="headerlink" href="#singularity-basic-usage-and-containers" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="use-of-singularity">
+<span id="id1"></span><h2>Use of Singularity<a class="headerlink" href="#use-of-singularity" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://sylabs.io/guides/3.9/user-guide/">Singularity</a> is the tool
+we use for containerization in this project. Containers allow us to
+build an environment which is stable, reproducible and portable –
+radio astronomy software does not need to be installed on the target
+host so long as it can run Singularity and accept a copy of a
+Singularity image built elsewhere. A Singularity image contains a copy
+of the operating system, all the dependencies and the target software
+itself, and so can be run anywhere.</p>
+<p>Full user and admin documentation are available on the Singularity web
+site. Here we give a very brief outline of how to use and build a
+singularity image, with an example of building a working image
+containing <a class="reference external" href="https://casa.nrao.edu/">CASA</a>.</p>
+<div class="section" id="before-starting">
+<span id="before"></span><h3>Before starting<a class="headerlink" href="#before-starting" title="Permalink to this headline">¶</a></h3>
+<p>On most systems you will need to ensure that the <code class="docutils literal notranslate"><span class="pre">singularity</span></code>
+command is accessible. On the Cambridge and Hertfordshire systems you
+can do this with</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">(host) $</span> module load singularity
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="basic-use">
+<span id="basicuse"></span><h3>Basic use<a class="headerlink" href="#basic-use" title="Permalink to this headline">¶</a></h3>
+<p>If a Singularity or Docker image is available for download then you
+can access it with <code class="docutils literal notranslate"><span class="pre">singularity</span> <span class="pre">pull</span></code> which will create a <code class="docutils literal notranslate"><span class="pre">.sif</span></code> file.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">[mjh@lofar-server mjh]$</span> singularity pull library://lolcow
+<span class="go">INFO:    Using cached image</span>
+<span class="gp">[mjh@lofar-server mjh]$</span> ls -l lolcow_latest.sif
+<span class="go">-rwxr-xr-x 1 mjh lofar 81454622 Dec  5 16:24 lolcow_latest.sif</span>
+</pre></div>
+</div>
+<p>You can then run this image, which executes a pre-defined run script
+in the singularity environment:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">[mjh@lofar-server mjh]$</span> singularity run lolcow_latest.sif
+<span class="go">_____________________________</span>
+<span class="go">&lt; Sun Dec 5 16:28:53 GMT 2021 &gt;</span>
+<span class="go">-----------------------------</span>
+<span class="go">\   ^__^</span>
+<span class="go">\  (oo)\_______</span>
+<span class="go">   (__)\       )\/\</span>
+<span class="go">       ||----w |</span>
+<span class="go">       ||     ||</span>
+<span class="gp">[mjh@lofar-server mjh]$</span>
+</pre></div>
+</div>
+<p>Or you can run a shell inside it:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">[mjh@lofar-server mjh]$</span> singularity shell lolcow_latest.sif
+<span class="go">Singularity&gt; cat /etc/os-release</span>
+<span class="go">NAME=&quot;Ubuntu&quot;</span>
+<span class="go">VERSION=&quot;20.04 LTS (Focal Fossa)&quot;</span>
+<span class="go">ID=ubuntu</span>
+<span class="go">ID_LIKE=debian</span>
+<span class="go">PRETTY_NAME=&quot;Ubuntu 20.04 LTS&quot;</span>
+<span class="go">VERSION_ID=&quot;20.04&quot;</span>
+<span class="go">HOME_URL=&quot;https://www.ubuntu.com/&quot;</span>
+<span class="go">SUPPORT_URL=&quot;https://help.ubuntu.com/&quot;</span>
+<span class="go">BUG_REPORT_URL=&quot;https://bugs.launchpad.net/ubuntu/&quot;</span>
+<span class="go">PRIVACY_POLICY_URL=&quot;https://www.ubuntu.com/legal/terms-and-policies/privacy-policy&quot;</span>
+<span class="go">VERSION_CODENAME=focal</span>
+<span class="go">UBUNTU_CODENAME=focal</span>
+<span class="go">Singularity&gt;</span>
+</pre></div>
+</div>
+<p>Or you can run a single command in the singularity environment and
+then exit:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">[mjh@lofar-server mjh]$</span> singularity <span class="nb">exec</span> lolcow_latest.sif cowsay moo
+<span class="go"> _____</span>
+<span class="go"> &lt; moo &gt;</span>
+<span class="go"> -----</span>
+<span class="go"> \   ^__^</span>
+<span class="go"> \  (oo)\_______</span>
+<span class="go">    (__)\       )\/\</span>
+<span class="go">        ||----w |</span>
+<span class="go">        ||     ||</span>
+</pre></div>
+</div>
+<p>All of these three methods of interacting with an image can also be
+run on a Singularity library or Docker image, in which case the image
+will be downloaded and deleted after it is no longer needed. However
+for HPC work it is probably better to have a local, static version of
+the image file.</p>
+</div>
+<div class="section" id="binding-file-systems">
+<h3>Binding file systems<a class="headerlink" href="#binding-file-systems" title="Permalink to this headline">¶</a></h3>
+<p>By default your home directory, the current working directory and /tmp on the host you are running on are accessible inside the Singularity. If you want other areas to be visible you can bind them with the <code class="docutils literal notranslate"><span class="pre">-B</span></code> option:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">[mjh@lofar-server mjh]$</span> singularity shell -B/beegfs lolcow_latest.sif
+<span class="go">Singularity&gt; ls /beegfs/</span>
+<span class="go">backup  cair  car  general  lms  lofar  lost+found  temp  usage</span>
+</pre></div>
+</div>
+<p>Often it is useful to bind a file system or a part of the file system outside the singularity to a different name inside it, e.g. if running a script that needs to have a working directory with a specific name. You can specify this with a colon after the original name.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">[mjh@lofar-server mjh]$</span> singularity shell -B/beegfs/lofar/mjh:/data lolcow_latest.sif
+</pre></div>
+</div>
+<p>Finally you may want to prevent the image from accessing your home directory. To give it minimal access to the file system use the <code class="docutils literal notranslate"><span class="pre">-c</span></code> or <code class="docutils literal notranslate"><span class="pre">--contain</span></code> option. This will cause an empty home directory to be presented inside the singularity. Combined with <code class="docutils literal notranslate"><span class="pre">-B</span></code> you can use this to give access only to selected parts of the file system.</p>
+</div>
+<div class="section" id="building-an-image">
+<span id="singularity-building-an-image"></span><h3>Building an image<a class="headerlink" href="#building-an-image" title="Permalink to this headline">¶</a></h3>
+<p>To build a new singularity image we use a definition file. In this case we will base our image on Scientific Linux 7 (a Red Hat clone) because we want to use CASA, which expects a Red Hat environment:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">BootStrap: docker</span>
+<span class="go">From: scientificlinux/sl</span>
+
+<span class="gp">%</span>post
+<span class="go">yum -y update</span>
+<span class="go">yum -y install wget perl less</span>
+<span class="go">cd /usr/local</span>
+<span class="go">wget https://casa.nrao.edu/download/distro/casa/release/rhel/casa-6.4.0-16-py3.8.tar.xz</span>
+<span class="go">tar xf casa-6.4.0-16-py3.8.tar.xz</span>
+<span class="go">rm casa-6.4.0-16-py3.8.tar.xz</span>
+
+<span class="gp">%</span>environment
+<span class="go">export LC_ALL=C</span>
+<span class="go">export PATH=/usr/local/casa-6.4.0-16/bin:$PATH</span>
+
+<span class="gp">%</span>runscript
+<span class="go">casa --nologger --log2term</span>
+
+<span class="gp">%</span>labels
+<span class="go">Author IRIS-Radioastronomy</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">%post</span></code> part of the code here installs any security updates and
+a few dependencies, then downloads and unpacks CASA. The
+<code class="docutils literal notranslate"><span class="pre">%environment</span></code> part makes sure that the <code class="docutils literal notranslate"><span class="pre">casa</span></code> command is on the system PATH and we define a runscript which means that running the singularity image will drop us into a CASA environment.
+All commands within the definition file are expected to be in the chosen operating system’s language.</p>
+<p>To build this we run the command:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">[mjh@lofar-server mjh]$</span> singularity build --fakeroot casa.sif casa.def
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">--fakeroot</span></code> option here allows us to build the image as a normal user. If running on a machine where you have root access, you should use <code class="docutils literal notranslate"><span class="pre">sudo</span></code> instead.
+If you receive a permissions error for ‘’–fakeroot’’, your system administrator will have to <a class="reference external" href="https://sylabs.io/guides/3.5/user-guide/fakeroot.html">set it up for you</a>.</p>
+<p>Running this command you will see the generation of the image,
+including the download from Docker and the effects of running the
+commands in the <code class="docutils literal notranslate"><span class="pre">%post</span></code> script. At the end of the process the <code class="docutils literal notranslate"><span class="pre">.sif</span></code> file will be written and can be run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">[mjh@lofar-server mjh]$</span> singularity run -B/beegfs/car/mjh/jvla:/data casa.sif
+
+<span class="go">optional configuration file config.py not found, continuing CASA startup without it</span>
+
+<span class="go">IPython 7.15.0 -- An enhanced Interactive Python.</span>
+
+<span class="go">Using matplotlib backend: agg</span>
+<span class="go">Telemetry initialized. Telemetry will send anonymized usage statistics to NRAO.</span>
+<span class="go">You can disable telemetry by adding the following line to the config.py file in your rcdir (e.g. ~/.casa/config.py):</span>
+<span class="go">telemetry_enabled = False</span>
+<span class="go">--&gt; CrashReporter initialized.</span>
+<span class="go">CASA 6.4.0.16 -- Common Astronomy Software Applications [6.4.0.16]</span>
+<span class="go">2021-12-05 18:27:46     INFO    ::casa  optional configuration file config.py not found, continuing CASA startup without it</span>
+<span class="go">[...]</span>
+
+<span class="go">CASA &lt;1&gt;:</span>
+</pre></div>
+</div>
+<p>If you have created an account on the <a class="reference external" href="https://cloud.sylabs.io">Singularity cloud library</a> then you can upload the image there and other users will be able to <code class="docutils literal notranslate"><span class="pre">singularity</span> <span class="pre">pull</span></code> it:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">[mjh@lofar-server mjh]$</span> singularity sign casa.sif
+<span class="go">Signing image: casa.sif</span>
+<span class="go">[...]</span>
+<span class="go">Signature created and applied to casa.sif</span>
+<span class="gp">[mjh@lofar-server mjh]$</span> singularity push casa.sif library://mhardcastle/default/casa
+<span class="go">1.3GiB / 1.3GiB [==============================================================================] 100 % 15.3 MiB/s 0s</span>
+
+<span class="go">Library storage: using 4.14 GiB out of 11.00 GiB quota (37.6% used)</span>
+<span class="go">Container URL: https://cloud.sylabs.io/library/mhardcastle/default/casa</span>
+</pre></div>
+</div>
+<p>Note that for a singularity pull to work you must apply a tag to the uploaded file!</p>
+</div>
+</div>
+<div class="section" id="singularity-containers">
+<h2>Singularity containers<a class="headerlink" href="#singularity-containers" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="libraries">
+<h2>Libraries<a class="headerlink" href="#libraries" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Singularity: basic usage and containers</a><ul>
+<li><a class="reference internal" href="#use-of-singularity">Use of Singularity</a><ul>
+<li><a class="reference internal" href="#before-starting">Before starting</a></li>
+<li><a class="reference internal" href="#basic-use">Basic use</a></li>
+<li><a class="reference internal" href="#binding-file-systems">Binding file systems</a></li>
+<li><a class="reference internal" href="#building-an-image">Building an image</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#singularity-containers">Singularity containers</a></li>
+<li><a class="reference internal" href="#libraries">Libraries</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="BENCHM.html"
+                        title="previous chapter">Benchmarking processing performance and Parameterized jobs IRIS(cert)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="rascilUC.html"
+                        title="next chapter">Use-case workflows (RASCIL)</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/singularity.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="rascilUC.html" title="Use-case workflows (RASCIL)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="BENCHM.html" title="Benchmarking processing performance and Parameterized jobs IRIS(cert)"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">eMerlin v0.0.3 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, eMerlin.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>
