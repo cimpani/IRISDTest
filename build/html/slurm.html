@@ -1,0 +1,270 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Slurm Cheat Sheet &#8212; IRIS for Radio Astronomy  documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="nav-item nav-item-0"><a href="index.html">IRIS for Radio Astronomy  documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="slurm-cheat-sheet">
+<h1>Slurm Cheat Sheet<a class="headerlink" href="#slurm-cheat-sheet" title="Permalink to this headline">¶</a></h1>
+<p>The Cambridge HPC uses slurm to manage resources and schedule jobs. The following are a list of commands that may prove useful when managing slurm jobs.</p>
+<p>For more detailed descriptions of slurm commands there are several available online resources including:</p>
+<ul class="simple">
+<li><a class="reference external" href="https://www.cism.ucl.ac.be/Services/Formations/slurm/2016/slurm.pdf">https://www.cism.ucl.ac.be/Services/Formations/slurm/2016/slurm.pdf</a></li>
+<li><a class="reference external" href="https://slurm.schedmd.com/man_index.html">https://slurm.schedmd.com/man_index.html</a></li>
+</ul>
+<p>Additional information about each of the commands described, for example <code class="docutils literal notranslate"><span class="pre">sinfo</span></code>, can also be obtained using the man command, for example <code class="docutils literal notranslate"><span class="pre">man</span> <span class="pre">sinfo</span></code>.</p>
+<div class="section" id="account-balance">
+<h2>Account Balance<a class="headerlink" href="#account-balance" title="Permalink to this headline">¶</a></h2>
+<p>Use the following command to get information about the amount of hours available for use on each of the accounts to which you have access:</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">(host) $</span> mybalance
+</pre></div>
+</div>
+</div></blockquote>
+<p>This will return a list similar to the following:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="18%" />
+<col width="36%" />
+<col width="20%" />
+<col width="26%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">User / Usage</th>
+<th class="head">Account / Usage</th>
+<th class="head">Account Limit</th>
+<th class="head">Available (hours)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>dc-webs1 / 1</td>
+<td>DIRAC-TP001-CPU / 12,000</td>
+<td>500,000</td>
+<td>488,000</td>
+</tr>
+<tr class="row-odd"><td>dc-webs1 / 0</td>
+<td>DIRAC-TP001-GPU /0</td>
+<td>2,000</td>
+<td>2,000</td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li>User is the name of the user whose account information is being shown</li>
+<li>Account shows the account names available to the user along with the amount of hours that have already been spent against that account</li>
+<li>Account Limit details the maximum number of hours allocated to each account</li>
+<li>Available lists the amount of hours still available to be spent</li>
+</ul>
+</div>
+<div class="section" id="getting-cluster-info">
+<h2>Getting Cluster Info<a class="headerlink" href="#getting-cluster-info" title="Permalink to this headline">¶</a></h2>
+<p>To get information about the available nodes and partitions use the following command:</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">(host) $</span> sinfo
+</pre></div>
+</div>
+</div></blockquote>
+<p>This will return a list similar to the following. Each partition is listed with separate entries for each unique node state.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="12%" />
+<col width="6%" />
+<col width="13%" />
+<col width="6%" />
+<col width="6%" />
+<col width="56%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">PARTITION</th>
+<th class="head">AVAIL</th>
+<th class="head">TIMELIMIT</th>
+<th class="head">NODES</th>
+<th class="head">STATE</th>
+<th class="head">NODELIST</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>icelake</td>
+<td>up</td>
+<td>7-00:00:00</td>
+<td>18</td>
+<td>idle</td>
+<td>cpu-q-[58,97,99-100,169-176,397-400,411-412]</td>
+</tr>
+<tr class="row-odd"><td>icelake</td>
+<td>down</td>
+<td>7-00:00:00</td>
+<td>1</td>
+<td>down</td>
+<td>cpu-q-244</td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li>PARTITION is the partition name</li>
+<li>AVAIL states whether the partition is currently available or not</li>
+<li>TIMELIMIT gives the maximum time limit for any user job in days-hours:minutes:seconds. <cite>infinite</cite> is displayed if there is no time limit</li>
+<li>NODES gives the number of nodes in this state</li>
+<li>STATE gives the current state of the nodes. The most common states are <cite>allocated</cite> if the node has been allocated to a job, <cite>down</cite> if the node is unavailable and <cite>idle</cite> if the node is unallocated</li>
+<li>NODELIST lists the names of every node in this state</li>
+</ul>
+</div>
+<div class="section" id="monitoring-jobs">
+<h2>Monitoring Jobs<a class="headerlink" href="#monitoring-jobs" title="Permalink to this headline">¶</a></h2>
+<p>To see the status of all jobs submitted by an individual user use the following command replacing <cite>username</cite> with your user name:</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">(host) $</span> squeue -u username
+</pre></div>
+</div>
+</div></blockquote>
+<p>This will return a list similar to the following:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="11%" />
+<col width="13%" />
+<col width="28%" />
+<col width="11%" />
+<col width="3%" />
+<col width="6%" />
+<col width="7%" />
+<col width="22%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">JOBID</th>
+<th class="head">PARTITION</th>
+<th class="head">NAME</th>
+<th class="head">USER</th>
+<th class="head">ST</th>
+<th class="head">TIME</th>
+<th class="head">NODES</th>
+<th class="head">NODELIST(REASON)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>51610182</td>
+<td>icelake</td>
+<td>VLA-Combining-Images</td>
+<td>dc-webs1</td>
+<td>R</td>
+<td>5:12</td>
+<td>1</td>
+<td>cpu-q-79</td>
+</tr>
+<tr class="row-odd"><td>51610183</td>
+<td>icelake</td>
+<td>VLA-Basic-Imaging</td>
+<td>dc-webs1</td>
+<td>PD</td>
+<td>0:00</td>
+<td>1</td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li>JOBID is the id assigned to the job by slurm</li>
+<li>PARTITION describes which partition the job is scheduled to be run on, icelake in the above example.</li>
+<li>NAME gives the name of the script as defined using the <code class="docutils literal notranslate"><span class="pre">#SBATCH</span> <span class="pre">-J</span></code> command</li>
+<li>USER is the name of the user who submitted the job, dc-webs1 in the above example</li>
+<li>ST is the state of the job. The most common states are <cite>R</cite> if the job is running, <cite>PD</cite> if the job is pending, <cite>F</cite> if the job has failed and <cite>CD</cite> if the job completed successfully</li>
+<li>TIME is the amount of time used by the process</li>
+<li>NODES is the number of nodes allocated to the job</li>
+<li>NODELIST(REASON) lists the names of the nodes allocated to the job</li>
+</ul>
+</div>
+<div class="section" id="controlling-jobs">
+<h2>Controlling Jobs<a class="headerlink" href="#controlling-jobs" title="Permalink to this headline">¶</a></h2>
+<p>To cancel a job use the following command replacing <cite>jobid</cite> with the identifier of the job to be cancelled:</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">(host) $</span> scancel jobid
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Slurm Cheat Sheet</a><ul>
+<li><a class="reference internal" href="#account-balance">Account Balance</a></li>
+<li><a class="reference internal" href="#getting-cluster-info">Getting Cluster Info</a></li>
+<li><a class="reference internal" href="#monitoring-jobs">Monitoring Jobs</a></li>
+<li><a class="reference internal" href="#controlling-jobs">Controlling Jobs</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/slurm.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="nav-item nav-item-0"><a href="index.html">IRIS for Radio Astronomy  documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, IRIS for Radio Astronomy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

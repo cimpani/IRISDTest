@@ -1,0 +1,523 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Job submission on IRIS Resources - Galahad, Dirac SAFE and IRIS(cert) &#8212; IRIS for Radio Astronomy  documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Benchmarking processing performance and Parameterized jobs IRIS(cert)" href="BENCHM.html" />
+    <link rel="prev" title="Singularity: basic usage and containers" href="singularity.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="BENCHM.html" title="Benchmarking processing performance and Parameterized jobs IRIS(cert)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="singularity.html" title="Singularity: basic usage and containers"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">IRIS for Radio Astronomy  documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="job-submission-on-iris-resources-galahad-dirac-safe-and-iris-cert">
+<h1>Job submission on IRIS Resources - Galahad, Dirac SAFE and IRIS(cert)<a class="headerlink" href="#job-submission-on-iris-resources-galahad-dirac-safe-and-iris-cert" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="galahad">
+<h2>Galahad<a class="headerlink" href="#galahad" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="job-submission">
+<h3>Job submission:<a class="headerlink" href="#job-submission" title="Permalink to this headline">¶</a></h3>
+<p>To submit a job on Galahad:</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>  [&lt;your-user&gt;@galahad ~]$ cat  slrascil1.sh
+  #!/bin/bash
+  #SBATCH --ntasks 1
+  #SBATCH --time 5:0
+  #SBATCH --output=test_%j.log
+  pwd; hostname; date
+
+  module load python37base gcc920
+  CMD=&quot;singularity exec /home/&lt;your-user&gt;/RASCIL-full1.img python3 /rascil/examples/scripts/imaging.py&quot;
+  eval $CMD
+
+
+- Submit the job using the command:
+
+  [&lt;your-user&gt;@galahad ~]$  sbatch slrascil1.sh
+  Submitted batch job 3404
+
+
+- Check the submitted job:
+
+  [&lt;your-user&gt;@galahad ~]$  squeue
+  JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
+  3404   CLUSTER slrascil   &lt;your-user&gt;R       0:18      1 compute-0-7
+</pre></div>
+</div>
+<p>Note: RASCIL-full1.img can be found under /share/nas/cimpan</p>
+</div>
+<div class="section" id="vnc-on-galahad">
+<h3>VNC on Galahad<a class="headerlink" href="#vnc-on-galahad" title="Permalink to this headline">¶</a></h3>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>You run vncserver on galahad (already installed). On your windows PC use:
+https://www.tightvnc.com/download-old.php as your vnc viewer.
+
+When you run vncserver for the first time you will set up a password.
+It will report it has created a virtual display galahad.ast.man.ac.uk:X
+The X will be a number. You then use that address in your vnc viewer
+
+[&lt;your-user&gt;@galahad ~]$ vncserver
+[&lt;your-user&gt;@galahad ~]$ vncserver -kill :3
+Killing Xvnc process ID 35841
+</pre></div>
+</div>
+<p>With vnc I would suggest editing the default .vnc/xstartup file (created
+after you run vncserver for the first time) to change the last line to
+run /usr/bin/icewm as the window manager rather than xinitrc. You should
+then kill off your first vncserver and run it again to pick up the
+change. This avoids a bug where sometimes the VNC just displays a black
+screen.</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>[&lt;your-user&gt;@galahad ~]$ cat .vnc/xstartup
+#!/bin/shunset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+#exec /etc/X11/xinit/xinitrc
+/usr/bin/icewm
+[&lt;your-user&gt;@galahad ~]$ vncserver #restarting the server
+</pre></div>
+</div>
+<p>How to find the host for the for the diagnostics page? It would be
+whichever host has started it, so use squeue to see what host is running
+your job and then it would be for example <a class="reference external" href="http://compute-0-5:8787">http://compute-0-5:8787</a></p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>[&lt;your-user&gt;@galahad ~]$ squeue
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="dirac-safe">
+<h2>Dirac SAFE<a class="headerlink" href="#dirac-safe" title="Permalink to this headline">¶</a></h2>
+<p>To submit a job on  Dirac SAFE (skylake):</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>  [&lt;your-user&gt;@login-e-13 ~]$ cat  slrascil1.sh
+  #!/bin/bash
+  #SBATCH -A DIRAC-TP001-CPU
+  #SBATCH -p skylake
+  #SBATCH --ntasks 1
+  #SBATCH --time 5:0
+  #SBATCH --output=test_%j.log
+  pwd; hostname; date
+
+  CMD=&quot;singularity exec /home/&lt;your-user&gt;/RASCIL-full1.img python3 /rascil/examples/scripts/imaging.py&quot;
+  eval $CMD
+
+
+- Submit the job using the command:
+
+  [&lt;your-user&gt;@login-e-13 ~]$ sbatch slrascil1.sh
+  Submitted batch job 52726369
+
+
+- Check the submitted job:
+
+  [&lt;your-user&gt;@login-e-13 ~]$ squeue | grep &lt;your-user&gt;
+  52726369   skylake slrascil &lt;your-user&gt;  R       0:04      1 cpu-e-820
+
+
+- Check the results:
+
+  [&lt;your-user&gt;@login-e-13 ~]$ ls
+  imaging_dirty.fits  imaging_restored.fits
+  imaging_psf.fits
+
+
+- Check the logfile:
+
+  [&lt;your-user&gt;@login-e-13 ~]$ cat test_52726369.log
+</pre></div>
+</div>
+</div>
+<div class="section" id="iris-through-certificate">
+<h2>IRIS through certificate<a class="headerlink" href="#iris-through-certificate" title="Permalink to this headline">¶</a></h2>
+<p>To get access to IRIS and submit jobs, please follow the documentation under <a class="reference external" href="https://irisdocumentation.readthedocs.io/en/latest/signupIR.html#signing-up-to-iris-through-certificate">Signing up to IRIS through certificate</a>  that gives details how to get a certificate, be approved by a VO and install DIRAC in order to be able to submit jobs to IRIS - jdl and py forms.</p>
+<p>From the server where dirac is installed:</p>
+<ul>
+<li><p class="first">start proxy before using any dms commands</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>bash-4.2$ /raid/scratch/&lt;your-user&gt;/dirac_ui &gt; source bashrc
+bash-4.2$ /raid/scratch/&lt;your-user&gt;/dirac_ui &gt; dirac-proxy-init -x -N
+</pre></div>
+</div>
+</li>
+<li><p class="first">Add the RASCIL container to the filecathalog using command
+“dirac-dms-add-file”</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dirac</span><span class="o">-</span><span class="n">dms</span><span class="o">-</span><span class="n">add</span><span class="o">-</span><span class="n">file</span> <span class="n">LFN</span><span class="p">:</span><span class="o">/</span><span class="n">skatelescope</span><span class="o">.</span><span class="n">eu</span><span class="o">/</span><span class="n">user</span><span class="o">/</span><span class="n">c</span><span class="o">/&lt;</span><span class="n">your</span><span class="o">-</span><span class="n">user</span><span class="o">&gt;/</span><span class="n">rascil</span><span class="o">/</span><span class="n">RASCIL</span><span class="o">-</span><span class="n">full1</span><span class="o">.</span><span class="n">img</span> <span class="n">RASCIL</span><span class="o">-</span><span class="n">full1</span><span class="o">.</span><span class="n">img</span>  <span class="n">UKI</span><span class="o">-</span><span class="n">NORTHGRID</span><span class="o">-</span><span class="n">MAN</span><span class="o">-</span><span class="n">HEP</span><span class="o">-</span><span class="n">disk</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">check where the file has been uploaded using command
+“dirac-dms-filecatalog-cli”</p>
+</li>
+</ul>
+<div class="section" id="submit-a-simple-job">
+<h3>Submit a simple job<a class="headerlink" href="#submit-a-simple-job" title="Permalink to this headline">¶</a></h3>
+<p><strong>Details at:</strong>  <a class="reference external" href="https://dirac.readthedocs.io/en/latest/UserGuide/GettingStarted/UserJobs/CommandLine/index.html">Simple_Job</a></p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>bash-4.2$ /raid/scratch/&lt;your-user&gt;/dirac_ui &gt; cat simple.jdl
+JobName = &quot;InputAndOuputSandbox&quot;;
+Executable = &quot;pythonV.sh&quot;;
+StdOutput = &quot;StdOut&quot;;
+StdError = &quot;StdErr&quot;;
+InputSandbox = {&quot;pythonV.sh&quot;};
+OutputSandbox = {&quot;StdOut&quot;,&quot;StdErr&quot;};
+
+bash-4.2$ /raid/scratch/&lt;your-user&gt;/dirac_ui &gt; cat pythonV.sh
+#!/bin/bash
+/usr/bin/python --version;
+</pre></div>
+</div>
+</div>
+<div class="section" id="monitor-a-simple-job">
+<h3>Monitor a simple job<a class="headerlink" href="#monitor-a-simple-job" title="Permalink to this headline">¶</a></h3>
+<p><strong>Details at:</strong>  <a class="reference external" href="https://dirac.readthedocs.io/en/latest/UserGuide/GettingStarted/UserJobs/CommandLine/index.html">Simple_Job</a></p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>bash-4.2$ /raid/scratch/&lt;your-user&gt;/dirac_ui &gt; dirac-wms-job-submit simple.jdl
+JobID = 25104301
+
+bash-4.2$ /raid/scratch/&lt;your-user&gt;/dirac_ui &gt; dirac-wms-job-status 25104301
+JobID=25104301 Status=Done; MinorStatus=Execution Complete;
+Site=LCG.UKI-NORTHGRID-MAN-HEP.uk;
+</pre></div>
+</div>
+<ul class="simple">
+<li>The job execution can be seen also on DIRAC <a class="reference external" href="https://dirac.gridpp.ac.uk:8443/DIRAC/">Web-link</a></li>
+</ul>
+<p>(see Applications/Job Monitor -&gt; Owner (your name) -&gt; submit)</p>
+</div>
+<div class="section" id="put-rascil-img-in-a-file-catalog">
+<h3>Put RASCIL.img in a file catalog<a class="headerlink" href="#put-rascil-img-in-a-file-catalog" title="Permalink to this headline">¶</a></h3>
+<p><strong>Details at:</strong>  <a class="reference external" href="https://dirac.readthedocs.io/en/latest/UserGuide/CommandReference/DataManagement/index.html">File_Catalog</a></p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>- Accessing File Catalog to add a testFile or a singularity container
+bash-4.2$ dirac-dms-filecatalog-cli
+Starting FileCatalog client
+FC:/&gt; cd /skatelescope.eu/user
+
+- Go to the first letter of your user
+FC:/skatelescope.eu/user&gt;cd c
+
+- Create (mkdir) or go to your user folder
+FC:/skatelescope.eu/user/c&gt;cd cimpan
+
+- Exit File Catalog
+FC:/skatelescope.eu/user/c/cimpan&gt;exit
+bash-4.2$
+
+bash-4.2$ /raid/scratch/&lt;your-user&gt;/dirac_ui &gt; dirac-dms-add-file LFN:/skatelescope.eu/user/&lt;first letter of your user&gt;/&lt;your-user&gt;/rascil/RASCIL.img RASCIL.img UKI-NORTHGRID-MAN-HEP-disk
+# UKI-NORTHGRID-MAN-HEP-disk - SE: DIRAC Storage Element
+
+Then you will find the file RASCIL.img under:
+FC:/skatelescope.eu/user/&lt;first letter of your user&gt;/&lt;your-user&gt;/rascil/RASCIL.img
+</pre></div>
+</div>
+</div>
+<div class="section" id="submitting-rascil-job">
+<h3>Submitting RASCIL job<a class="headerlink" href="#submitting-rascil-job" title="Permalink to this headline">¶</a></h3>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>cat simpleR1.jdl
+JobName    = &quot;InputAndOuputSandbox&quot;;
+Executable = &quot;testR1.sh&quot;;
+StdOutput = &quot;StdOut&quot;;
+StdError = &quot;StdErr&quot;;
+InputSandbox = {&quot;testR1.sh&quot;};
+InputData = {&quot;LFN:/skatelescope.eu/user/c/cimpan/rascil/RASCIL-full1.img&quot;};
+OutputSandbox = {&quot;StdOut&quot;,&quot;StdErr&quot;,&quot;imaging_dirty.fits&quot;,&quot;imaging_psf.fits&quot;,&quot;imaging_restored.fits&quot;};
+OutputSE =&quot;UKI-NORTHGRID-MAN-HEP-disk&quot;;
+Site = &quot;LCG.UKI-NORTHGRID-MAN-HEP.uk&quot;;
+
+ cat testR1.sh
+#!/bin/bash
+singularity exec --cleanenv -H $PWD:/srv --pwd /srv -C RASCIL-full1.img python3 /rascil/examples/scripts/imaging.py;
+</pre></div>
+</div>
+</div>
+<div class="section" id="managing-rascil-job">
+<h3>Managing RASCIL job<a class="headerlink" href="#managing-rascil-job" title="Permalink to this headline">¶</a></h3>
+<p><strong>Details at:</strong>  <a class="reference external" href="https://dirac.readthedocs.io/en/latest/UserGuide/GettingStarted/UserJobs/CommandLine/index.html">Simple_Job</a></p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>$ dirac-wms-job-submit simpleR1.jdl
+JobID = 25260750
+
+$ dirac-wms-job-status  25260750
+JobID=25260750 Status=Running; MinorStatus=Input Data Resolution;
+Site=LCG.UKI-NORTHGRID-MAN-HEP.uk;
+
+$ dirac-wms-job-status  25260750
+JobID=25260750 Status=Done; MinorStatus=Execution Complete;
+Site=LCG.UKI-NORTHGRID-MAN-HEP.uk;
+</pre></div>
+</div>
+</div>
+<div class="section" id="get-output-data-rascil-job">
+<h3>Get Output Data RASCIL job<a class="headerlink" href="#get-output-data-rascil-job" title="Permalink to this headline">¶</a></h3>
+<p><strong>Details at:</strong>  <a class="reference external" href="https://dirac.readthedocs.io/en/latest/UserGuide/GettingStarted/UserJobs/CommandLine/index.html">Simple_Job</a></p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>Note: the RASCIL job has 3 image outputs, so we specify them in
+OutputSandbox and we take the data locally using command
+
+$ dirac-wms-job-get-output  25260750
+Job output sandbox retrieved in
+/raid/scratch/&lt;your-user&gt;/dirac_ui/tests/rascilTests/25260750/
+$ cd 25260750
+$ ls
+imaging_dirty.fits  imaging_psf.fits  imaging_restored.fits  StdOut
+$ cat StdOut   #or StdErr
+</pre></div>
+</div>
+</div>
+<div class="section" id="job-submission-submit-jdl-vs-py">
+<h3>Job submission - submit .jdl vs .py<a class="headerlink" href="#job-submission-submit-jdl-vs-py" title="Permalink to this headline">¶</a></h3>
+<p><strong>Job submission - submit .jdl</strong></p>
+<ul>
+<li><p class="first">create .jdl and .sh files</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>cat simpleR1.jdl
+JobName = &quot;InputAndOuputSandbox&quot;;
+Executable = &quot;testR1.sh&quot;;
+StdOutput = &quot;StdOut&quot;;
+StdError = &quot;StdErr&quot;;
+InputSandbox = {&quot;testR1.sh&quot;};
+InputData = {&quot;LFN:/skatelescope.eu/user/c/cimpan/rascil/RASCIL-full1.img&quot;};
+OutputSandbox = {&quot;StdOut&quot;,&quot;StdErr&quot;};
+OutputData={&quot;imaging_dirty.fits&quot;,&quot;imaging_psf.fits&quot;,&quot;imaging_restored.fits&quot;};
+OutputSE =&quot;UKI-NORTHGRID-MAN-HEP-disk&quot;;
+Site = &quot;LCG.UKI-NORTHGRID-MAN-HEP.uk&quot;;
+
+
+cat testR1.sh
+#!/bin/bash
+singularity exec --cleanenv -H $PWD:/srv --pwd /srv -C RASCIL-full1.img python3 /rascil/examples/scripts/imaging.py;
+</pre></div>
+</div>
+</li>
+<li><p class="first">Submit the job</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>bash-4.2$ dirac-wms-job-submit simpleR1.jdl
+JobID = 25260750
+
+bash-4.2$ dirac-wms-job-status 25260750
+JobID=25260750 Status=Running; MinorStatus=Input Data Resolution;
+Site=LCG.UKINORTHGRID-MAN-HEP.uk;
+
+bash-4.2$ dirac-wms-job-status 25260750
+JobID=25260750 Status=Done; MinorStatus=Execution Complete;
+Site=LCG.UKINORTHGRID-MAN-HEP.uk;
+</pre></div>
+</div>
+</li>
+<li><p class="first">Get output data and output file</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>bash-4.2$ dirac-wms-job-get-output-data 25336768
+Job 25336768 output data retrieved
+bash-4.2$ ls
+-rw-r--r--. 1 &lt;your-user&gt; users6 2102400 May 14 17:32 imaging_dirty.fits
+-rw-r--r--. 1 &lt;your-user&gt; users6 2102400 May 14 17:32 imaging_psf.fits
+-rw-r--r--. 1 &lt;your-user&gt; users6 2102400 May 14 17:32 imaging_restored.fits
+
+bash-4.2$ dirac-wms-job-get-output 25336768
+Job output sandbox retrieved in
+/raid/scratch/&lt;your-user&gt;/dirac_ui/tests/rascilTests/ 25336768/
+bash-4.2$ cd 25336768
+bash-4.2$ ls
+StdErr StdOut
+bash-4.2$ cat StdErr
+INFO: Convert SIF file to sandbox...
+INFO: Cleaning up image...
+</pre></div>
+</div>
+</li>
+</ul>
+<p><strong>Job submission - submit .py</strong></p>
+<ul>
+<li><p class="first">Set up environment variables:</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>#SET THE PATH PYTHON 2.7 INTO $PATH
+#PATH to python 2.7 added
+eg bash-4.2$ export PATH=/usr/local/casa/bin/python:$PATH
+</pre></div>
+</div>
+</li>
+<li><p class="first">the job to be submitted and the .sh script</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>bash-4.2$ cat jobpy.py
+import os
+import sys
+import time
+# setup DIRAC
+from DIRAC.Core.Base import Script
+Script.parseCommandLine(ignoreErrors=False)
+from DIRAC.Interfaces.API.Job import Job
+from DIRAC.Interfaces.API.Dirac import Dirac
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+SitesList = [&#39;LCG.UKI-NORTHGRID-MAN-HEP.uk&#39;]
+SEList = [&#39;UKI-NORTHGRID-MAN-HEP-disk&#39;]
+dirac = Dirac()
+j = Job(stdout=&#39;StdOut&#39;, stderr=&#39;StdErr&#39;)
+j.setName(&#39;TestJob&#39;)
+j.setInputSandbox([&quot;testR1py.sh&quot;])
+j.setInputData([&#39;LFN:/skatelescope.eu/user/c/cimpan/rascil/RASCIL-full1.img&#39;])
+j.setOutputSandbox([&#39;StdOut&#39;,&#39;StdErr&#39;])
+j.setOutputData([&#39;imaging_dirty.fits&#39;,&#39;imaging_psf.fits&#39;,&#39;imaging_restored.fits&#39;],
+outputSE=&#39;UKI-NORTHGRID-MAN-HEP-disk&#39;)
+j.setExecutable(&#39;testR1py.sh&#39;)
+jobID = dirac.submitJob(j)
+print &#39;Submission Result: &#39;, jobID
+
+
+bash-4.2$ cat testR1py.sh
+#!/bin/bash
+singularity exec --cleanenv -H $PWD:/srv --pwd /srv -C RASCIL-full1.img python3 /rascil/examples/scripts/imaging.py
+</pre></div>
+</div>
+</li>
+<li><p class="first">Submitting the job</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>bash-4.2$ python jobpy.py
+Submission Result: {&#39;requireProxyUpload&#39;: False, &#39;OK&#39;: True, &#39;rpcStub&#39;:
+((&#39;WorkloadManagement/JobManag er&#39;, {&#39;delegatedDN&#39;:
+None, &#39;timeout&#39;: 600, &#39;skipCACheck&#39;: False, &#39;keepAliveLapse&#39;: 150,
+&#39;delegatedGroup &#39;: None}), &#39;submitJob&#39;, (&#39;[ \n
+Origin = DIRAC;\n Executable = &quot;$DIRACROOT/scripts/dirac-jobexec&quot;;
+\n StdError = StdErr;\n LogLevel = info;\n OutputSE = UKI-NORTHGRIDMAN-
+HEP-disk;\n InputSa ndbox = \n {\n
+&quot;testR1py.sh&quot;,\n &quot;SB:GridPPSandboxSE|/SandBox/i/iulia.c.cim
+pan.skatelescope.eu_user/cf8/ca6/cf8ca689995e24c01c068eb6f34126b8.tar.bz2&quot;\n
+};\n JobName = T estJob;\n Priority = 1;\n
+Arguments = &quot;jobDescription.xml -o LogLevel=info&quot;;\n JobGroup = skat
+elescope.eu;\n OutputSandbox = \n {\n StdOut,\n
+StdErr,\n Sc ript1_testR1py.sh.log\n
+};\n StdOutput = StdOut;\n InputData = LFN:/skatelescope.eu/user/c
+/&lt;your-user&gt;/rascil/RASCIL-full1.img;\n JobType = User;\n OutputData = \n
+{\n imagin g_dirty.fits,\n
+imaging_psf.fits,\n imaging_restored.fits\n };\n]&#39;,)), &#39;Va
+lue&#39;: 25344748, &#39;JobID&#39;: 25344748}
+</pre></div>
+</div>
+</li>
+<li><p class="first">Get the results</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>bash-4.2$ dirac-wms-job-get-output 25344748
+Job output sandbox retrieved in
+/raid/scratch/&lt;your-user&gt;/dirac_ui/tests/rascilTests/25344748/
+
+bash-4.2$ cd 25344748
+bash-4.2$ ls
+Script1_testR1py.sh.log StdOut
+
+bash-4.2$ dirac-wms-job-get-output-data 25344748
+Job 25344748 output data retrieved
+bash-4.2$ ls
+imaging_dirty.fits imaging_psf.fits imaging_restored.fits
+Script1_testR1py.sh.log StdOut
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="useful-links">
+<h3>Useful Links<a class="headerlink" href="#useful-links" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference external" href="https://github.com/GridPP/user-guides">GridPP_user-guide</a></li>
+<li><a class="reference external" href="https://github.com/gridpp/user-guides/tree/master/getting-on-the-grid">Getting_on_the_grid</a></li>
+<li><a class="reference external" href="https://www.gridpp.ac.uk/wiki/Grid_user_crash_course">Grid_user_crash_course</a></li>
+<li><a class="reference external" href="https://www.gridpp.ac.uk/wiki/Quick_Guide_to_Dirac">Quick_Guide_to_Dirac</a></li>
+<li><a class="reference external" href="https://dirac.readthedocs.io/en/latest/UserGuide/GettingStarted/UserJobs/index.html">Getting_started_User_Jobs</a></li>
+<li><a class="reference external" href="https://dirac.readthedocs.io/en/latest/UserGuide/CommandReference/DataManagement/index.html">Getting_started_Data_Management</a></li>
+<li><a class="reference external" href="https://dirac.readthedocs.io/en/latest/UserGuide/GettingStarted/UserJobs/CommandLine/index.html">Getting_started_Command_Line</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Job submission on IRIS Resources - Galahad, Dirac SAFE and IRIS(cert)</a><ul>
+<li><a class="reference internal" href="#galahad">Galahad</a><ul>
+<li><a class="reference internal" href="#job-submission">Job submission:</a></li>
+<li><a class="reference internal" href="#vnc-on-galahad">VNC on Galahad</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#dirac-safe">Dirac SAFE</a></li>
+<li><a class="reference internal" href="#iris-through-certificate">IRIS through certificate</a><ul>
+<li><a class="reference internal" href="#submit-a-simple-job">Submit a simple job</a></li>
+<li><a class="reference internal" href="#monitor-a-simple-job">Monitor a simple job</a></li>
+<li><a class="reference internal" href="#put-rascil-img-in-a-file-catalog">Put RASCIL.img in a file catalog</a></li>
+<li><a class="reference internal" href="#submitting-rascil-job">Submitting RASCIL job</a></li>
+<li><a class="reference internal" href="#managing-rascil-job">Managing RASCIL job</a></li>
+<li><a class="reference internal" href="#get-output-data-rascil-job">Get Output Data RASCIL job</a></li>
+<li><a class="reference internal" href="#job-submission-submit-jdl-vs-py">Job submission - submit .jdl vs .py</a></li>
+<li><a class="reference internal" href="#useful-links">Useful Links</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="singularity.html"
+                        title="previous chapter">Singularity: basic usage and containers</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="BENCHM.html"
+                        title="next chapter">Benchmarking processing performance and Parameterized jobs IRIS(cert)</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/JobSub.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="BENCHM.html" title="Benchmarking processing performance and Parameterized jobs IRIS(cert)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="singularity.html" title="Singularity: basic usage and containers"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">IRIS for Radio Astronomy  documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, IRIS for Radio Astronomy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>
