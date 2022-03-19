@@ -8,7 +8,7 @@ Welcome to the documentation for IRIS Radio Astronomy
 =====================================================
 
 IRIS is a cooperative community creating digital research infrastructure to support STFC science. This
-site documents how to sign up for IRIS resources like IRIS (through certificate), Galahad, DIRAC/Safe, submit jobs on these resources and provides example Radio Astronomy workflows.
+site documents how to sign up for IRIS resources like IRIS (through certificate), Galahad, DIRAC/Safe, how to submit jobs on these resources and provides example Radio Astronomy workflows.
 
 For more details about IRIS, go to `What_is_IRIS <https://www.iris.ac.uk/>`__
 
